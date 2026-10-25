@@ -13,25 +13,20 @@ import {
   EyeOff,
   ShieldCheck,
   ArrowLeft,
+  Fingerprint,
 } from "lucide-react";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
 
-  // Form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // Authentication state
   const [checkingSession, setCheckingSession] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  /*
-   * Check whether a user already has an active session.
-   * Existing sessions are redirected to the admin dashboard.
-   */
   useEffect(() => {
     let mounted = true;
 
@@ -72,9 +67,6 @@ export default function AdminLogin() {
     };
   }, [navigate]);
 
-  /*
-   * Sign in using Supabase Auth.
-   */
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -105,7 +97,6 @@ export default function AdminLogin() {
             ? "Incorrect email or password. Please try again."
             : signInError.message || "Unable to sign in."
         );
-
         return;
       }
 
@@ -125,179 +116,227 @@ export default function AdminLogin() {
     }
   }
 
-  /*
-   * Session checking screen.
-   */
   if (checkingSession) {
     return (
-      <section className="auth-page">
-        <div className="auth-card">
+      <section className="admin-login-page">
+        <div className="admin-login-card admin-login-loading">
           <Brand />
 
-          <div className="auth-loading">
-            <div className="auth-icon">
-              <Loader2 size={26} className="spin" />
+          <div className="admin-login-loader">
+            <div className="admin-login-icon">
+              <Loader2 size={27} className="spin" />
             </div>
 
-            <h1>Checking access</h1>
+            <span className="admin-login-eyebrow">
+              SECURE ACCESS
+            </span>
 
-            <p>
-              Please wait while we verify your session.
-            </p>
+            <h1>Checking access</h1>
+            <p>Verifying your existing administrator session.</p>
           </div>
         </div>
       </section>
     );
   }
 
-  /*
-   * Administrator login screen.
-   */
   return (
-    <section className="auth-page">
-      <div className="auth-card">
-        {/* Branding */}
-        <div className="auth-brand">
-          <Brand />
-        </div>
+    <section className="admin-login-page">
+      <div className="admin-login-glow admin-login-glow-one" />
+      <div className="admin-login-glow admin-login-glow-two" />
 
-        {/* Header */}
-        <div className="auth-header">
-          <div className="auth-icon">
-            <LockKeyhole size={27} />
+      <div className="admin-login-layout">
+        {/* Left introduction panel */}
+        <aside className="admin-login-intro">
+          <div className="admin-login-brand">
+            <Brand />
           </div>
 
-          <span className="auth-eyebrow">
-            SECURE ADMINISTRATION
-          </span>
+          <div className="admin-login-intro-content">
+            <span className="admin-login-eyebrow">
+              CENTRAL STUDENT GOVERNMENT
+            </span>
 
-          <h1>Welcome back</h1>
+            <h1>
+              Leadership begins
+              <br />
+              <span>with responsibility.</span>
+            </h1>
 
-          <p>
-            Sign in to access the Central Student Government
-            control center.
-          </p>
-        </div>
+            <p>
+              Manage student announcements, campus events, assistance
+              resources, and other CSG website content in one place.
+            </p>
 
-        {/* Security information */}
-        <div className="auth-notice">
-          <ShieldCheck size={18} />
-          <span>
-            Restricted to authorized CSG administrators only.
-          </span>
-        </div>
-
-        {/* Login form */}
-        <form className="auth-form" onSubmit={handleSubmit}>
-          {/* Email */}
-          <label className="auth-field">
-            <span>Email address</span>
-
-            <div className="auth-input-wrap">
-              <Mail size={18} />
-
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value);
-                  if (error) setError("");
-                }}
-                placeholder="admin@example.com"
-                autoComplete="username"
-                autoCapitalize="none"
-                spellCheck={false}
-                required
-                disabled={submitting}
-              />
+            <div className="admin-login-feature">
+              <div className="admin-login-feature-icon">
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <strong>Protected administration</strong>
+                <span>Access reserved for authorized administrators.</span>
+              </div>
             </div>
-          </label>
 
-          {/* Password */}
-          <label className="auth-field">
-            <span>Password</span>
-
-            <div className="auth-input-wrap">
-              <LockKeyhole size={18} />
-
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                  if (error) setError("");
-                }}
-                placeholder="Enter your password"
-                autoComplete="current-password"
-                required
-                disabled={submitting}
-              />
-
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() =>
-                  setShowPassword((current) => !current)
-                }
-                aria-label={
-                  showPassword ? "Hide password" : "Show password"
-                }
-                aria-pressed={showPassword}
-                disabled={submitting}
-              >
-                {showPassword ? (
-                  <EyeOff size={18} />
-                ) : (
-                  <Eye size={18} />
-                )}
-              </button>
+            <div className="admin-login-feature">
+              <div className="admin-login-feature-icon">
+                <Fingerprint size={20} />
+              </div>
+              <div>
+                <strong>Secure authentication</strong>
+                <span>Your credentials are verified through Supabase.</span>
+              </div>
             </div>
-          </label>
+          </div>
 
-          {/* Error message */}
-          {error && (
-            <div className="error auth-error" role="alert">
-              <AlertCircle size={17} />
-              <span>{error}</span>
-            </div>
-          )}
+          <div className="admin-login-intro-footer">
+            <span className="admin-login-status-dot" />
+            Lipa City Colleges · Official CSG Portal
+          </div>
+        </aside>
 
-          {/* Submit */}
+        {/* Login panel */}
+        <main className="admin-login-card">
           <button
-            type="submit"
-            className="btn primary full auth-submit"
+            type="button"
+            className="admin-login-back"
+            onClick={() => navigate("/", { replace: true })}
             disabled={submitting}
           >
-            {submitting ? (
-              <>
-                <Loader2 size={18} className="spin" />
-                Signing in...
-              </>
-            ) : (
-              <>
-                <LockKeyhole size={17} />
-                Sign in to dashboard
-              </>
-            )}
+            <ArrowLeft size={16} />
+            Back to website
           </button>
-        </form>
 
-        {/* Back link */}
-        <button
-          type="button"
-          className="auth-back"
-          onClick={() => navigate("/", { replace: true })}
-          disabled={submitting}
-        >
-          <ArrowLeft size={16} />
-          Back to website
-        </button>
+          <div className="admin-login-mobile-brand">
+            <Brand />
+          </div>
 
-        {/* Footer */}
-        <div className="auth-footer">
-          <ShieldCheck size={14} />
-          <span>Central Student Government · Lipa City Colleges</span>
-        </div>
+          <div className="admin-login-form-header">
+            <div className="admin-login-icon">
+              <LockKeyhole size={25} />
+            </div>
+
+            <span className="admin-login-eyebrow">
+              ADMINISTRATOR ACCESS
+            </span>
+
+            <h2>Welcome back</h2>
+
+            <p>
+              Sign in with your administrator credentials to continue.
+            </p>
+          </div>
+
+          <div className="admin-login-security">
+            <ShieldCheck size={18} />
+            <span>
+              This area is restricted to authorized CSG administrators.
+            </span>
+          </div>
+
+          <form className="admin-login-form" onSubmit={handleSubmit}>
+            <label className="admin-login-field">
+              <span>Email address</span>
+
+              <div className="admin-login-input-wrap">
+                <Mail size={18} />
+
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    if (error) setError("");
+                  }}
+                  placeholder="admin@example.com"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  required
+                  disabled={submitting}
+                />
+              </div>
+            </label>
+
+            <label className="admin-login-field">
+              <span>Password</span>
+
+              <div className="admin-login-input-wrap">
+                <LockKeyhole size={18} />
+
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    if (error) setError("");
+                  }}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  required
+                  disabled={submitting}
+                />
+
+                <button
+                  type="button"
+                  className="admin-login-password-toggle"
+                  onClick={() =>
+                    setShowPassword((current) => !current)
+                  }
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  disabled={submitting}
+                >
+                  {showPassword ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
+                </button>
+              </div>
+            </label>
+
+            {error && (
+              <div className="admin-login-error" role="alert">
+                <AlertCircle size={18} />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="admin-login-submit"
+              disabled={submitting}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 size={18} className="spin" />
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  <LockKeyhole size={17} />
+                  Sign in to dashboard
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="admin-login-divider">
+            <span />
+            <ShieldCheck size={15} />
+            <span />
+          </div>
+
+          <p className="admin-login-bottom-note">
+            Your account credentials should never be shared with others.
+          </p>
+
+          <footer className="admin-login-footer">
+            Central Student Government
+            <span>·</span>
+            Lipa City Colleges
+          </footer>
+        </main>
       </div>
     </section>
   );

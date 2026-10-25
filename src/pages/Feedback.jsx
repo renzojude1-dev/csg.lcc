@@ -112,6 +112,7 @@ export default function Feedback() {
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
+  const [copyStatus, setCopyStatus] = useState("");
   const [trackingCode, setTrackingCode] = useState("");
   const [tracking, setTracking] = useState(false);
   const [trackingError, setTrackingError] = useState("");
@@ -130,7 +131,6 @@ export default function Feedback() {
 
   function handleFileChange(event) {
     const selectedFile = event.target.files?.[0] || null;
-
     setError("");
 
     if (!selectedFile) {
@@ -175,6 +175,49 @@ export default function Feedback() {
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+  }
+
+  async function copyTrackingCode() {
+    if (!result?.trackingCode) {
+      setCopyStatus("No tracking code is available to copy.");
+      return;
+    }
+
+    setCopyStatus("");
+
+    try {
+      if (navigator.clipboard?.writeText && window.isSecureContext) {
+        await navigator.clipboard.writeText(result.trackingCode);
+        setCopyStatus("Tracking code copied successfully.");
+        return;
+      }
+
+      const textArea = document.createElement("textarea");
+      textArea.value = result.trackingCode;
+      textArea.setAttribute("readonly", "");
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      textArea.style.top = "0";
+
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      textArea.setSelectionRange(0, textArea.value.length);
+
+      const copied = document.execCommand("copy");
+      document.body.removeChild(textArea);
+
+      if (!copied) {
+        throw new Error("Automatic copying is not supported.");
+      }
+
+      setCopyStatus("Tracking code copied successfully.");
+    } catch (err) {
+      console.error("Copy tracking code error:", err);
+      setCopyStatus(
+        "Could not copy automatically. Select the tracking code above and copy it manually."
+      );
     }
   }
 
@@ -235,29 +278,20 @@ export default function Feedback() {
         const uniqueId = generateToken();
         const filePath = `feedback/${uniqueId}-${safeFileName}`;
 
-        const { data: uploadData, error: uploadError } =
-          await supabase.storage
-            .from("csg-files")
-            .upload(filePath, file, {
-              cacheControl: "3600",
-              contentType: file.type || "application/octet-stream",
-              upsert: false,
-            });
-
-        if (uploadError) {
-          console.error("Supabase attachment upload error:", {
-            message: uploadError.message,
-            name: uploadError.name,
-            statusCode: uploadError.statusCode,
-            error: uploadError,
+        const { error: uploadError } = await supabase.storage
+          .from("csg-files")
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            contentType: file.type || "application/octet-stream",
+            upsert: false,
           });
 
+        if (uploadError) {
+          console.error("Supabase attachment upload error:", uploadError);
           throw new Error(
             `Attachment upload failed: ${uploadError.message}`
           );
         }
-
-        console.log("Attachment uploaded successfully:", uploadData);
 
         const { data: publicUrlData } = supabase.storage
           .from("csg-files")
@@ -288,7 +322,6 @@ export default function Feedback() {
 
       if (databaseError) {
         console.error("Feedback RPC error:", databaseError);
-
         throw new Error(
           "Feedback could not be submitted. Please try again."
         );
@@ -304,7 +337,7 @@ export default function Feedback() {
         referenceCode,
         trackingCode: `${referenceCode}.${token}`,
       });
-
+      setCopyStatus("");
       resetForm();
     } catch (err) {
       console.error("Feedback submission error:", err);
@@ -370,7 +403,6 @@ export default function Feedback() {
 
       if (lookupError) {
         console.error("Feedback lookup error:", lookupError);
-
         throw new Error(
           "Unable to check feedback right now. Please try again."
         );
@@ -397,6 +429,11 @@ export default function Feedback() {
 
     const enteredCode = trackingCode.trim();
     const separator = enteredCode.lastIndexOf(".");
+
+    if (separator < 0) {
+      setTrackingError("Enter your complete tracking code again.");
+      return;
+    }
 
     const referenceCode = enteredCode
       .slice(0, separator)
@@ -425,7 +462,6 @@ export default function Feedback() {
 
       if (updateError) {
         console.error("Resolution update error:", updateError);
-
         throw new Error(
           "Your response could not be saved. Please try again."
         );
@@ -446,6 +482,7 @@ export default function Feedback() {
 
   function sendAnotherMessage() {
     setResult(null);
+    setCopyStatus("");
     resetForm();
   }
 
@@ -495,12 +532,21 @@ export default function Feedback() {
             <button
               type="button"
               className="csg-feedback-secondary-button"
-              onClick={() =>
-                navigator.clipboard?.writeText(result.trackingCode)
-              }
+              onClick={copyTrackingCode}
             >
-              <ClipboardCheck size={16} /> Copy tracking code
+              <ClipboardCheck size={16} />
+              Copy tracking code
             </button>
+
+            {copyStatus && (
+              <p
+                className="csg-feedback-copy-status"
+                role="status"
+                aria-live="polite"
+              >
+                {copyStatus}
+              </p>
+            )}
           </div>
 
           <button
@@ -532,7 +578,8 @@ export default function Feedback() {
 
           <div className="csg-feedback-header-points">
             <span>
-              <ShieldCheck size={17} /> No account required
+              <ShieldCheck size={17} />
+              No account required
             </span>
           </div>
         </div>
@@ -560,8 +607,8 @@ export default function Feedback() {
           <div>
             <h2>Track your feedback</h2>
             <p>
-              Enter the complete private tracking code you received
-              after submitting.
+              Enter the complete private tracking code you received after
+              submitting.
             </p>
           </div>
         </div>
@@ -666,8 +713,8 @@ export default function Feedback() {
                 </>
               ) : (
                 <p>
-                  The CSG has not posted a reply yet. Please check
-                  again later.
+                  The CSG has not posted a reply yet. Please check again
+                  later.
                 </p>
               )}
             </div>
@@ -704,9 +751,7 @@ export default function Feedback() {
                       : "csg-feedback-resolution-button"
                   }
                   disabled={savingResolution}
-                  onClick={() =>
-                    updateResolution("Not yet resolved")
-                  }
+                  onClick={() => updateResolution("Not yet resolved")}
                 >
                   <MessageSquare size={17} />
                   Not yet resolved
@@ -753,9 +798,7 @@ export default function Feedback() {
                         className={`csg-feedback-category ${
                           selected ? "selected" : ""
                         }`}
-                        onClick={() =>
-                          updateField("category", value)
-                        }
+                        onClick={() => updateField("category", value)}
                         aria-pressed={selected}
                       >
                         <span className="csg-feedback-category-icon">
